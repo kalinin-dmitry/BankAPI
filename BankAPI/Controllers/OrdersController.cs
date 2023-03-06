@@ -26,14 +26,14 @@ namespace BankAPI.Controllers
             {
                 if (dbContext.Orders == null)
                 {
-                    return NotFound();
+                    return NotFound("База данных не содержит зарегистрированных операций");
                 }
-                var order = await dbContext.Orders.FindAsync(id);
+                var order = await dbContext.Orders.FindAsync(id); // поиск операции по id
                 if (order == null)
                 {
-                    return NotFound();
+                    return NotFound("Операция с указанным id не зарегистрирована");
                 }
-                switch (order.StatusCode)
+                switch (order.StatusCode)   // возврат статуса операции
                 {
                     case 0: return Ok("Статус операции: в обработке");
                     case 1: return Ok("Статус операции: успех");
@@ -49,10 +49,15 @@ namespace BankAPI.Controllers
         {
             using (var dbContext = _orderContextFactory.Create())
             {
-                order.StatusCode = 0;
-                dbContext.Orders.Add(order);
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState); // валидация данных
+                }
+                order.StatusCode = 0; // установка статуса "в обработке"
+                dbContext.Orders.Add(order);// добавление операции в базу данных
                 await dbContext.SaveChangesAsync();
-                if (ThreadPool.QueueUserWorkItem(o => UpdateOrderStatus(order.Id))) {
+                // обработка операции в отдельном потоке
+                if (ThreadPool.QueueUserWorkItem(o => UpdateOrderStatus(order.Id))) { 
                     return Ok("Операция поставлена в очередь под номером: " + order.Id);
                 }
                 return NotFound();
@@ -66,13 +71,13 @@ namespace BankAPI.Controllers
                 Thread.Sleep(new Random().Next(3000, 7000)); // случайная задержка от 3 до 7 секунд
                 if (order != null)
                 {
-                    if (order.PayAmount >= 1000)
+                    if (order.PayAmount >= 1000) // если сумма N >= 1000 руб. то статус = успех
                     {
-                        order.StatusCode = 1;
+                        order.StatusCode = 1; 
                     }
                     else
                     {
-                        order.StatusCode = 2;
+                        order.StatusCode = 2; // неуспех
                     }
                 }     
 

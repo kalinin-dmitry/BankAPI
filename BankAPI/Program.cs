@@ -17,7 +17,7 @@ namespace BankAPI
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
             });
 
-            builder.Services.AddTransient<OrderContextFactory>();
+            builder.Services.AddTransient<OrderContextFactory>(); //регистрируем OrderContextFactory
 
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
